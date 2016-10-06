@@ -9,8 +9,8 @@
 #include <unistd.h>
 
 void *echo(void *arg) {
-  int *clientSocket=(int*)arg;
-  // 向客户端发送数据
+  int *clientSocket = (int*)arg;
+  // 向客户端发数据
   char str[] = "Hello World!";
   write(*clientSocket, str, sizeof(str));
   // 关闭客户端
@@ -18,15 +18,9 @@ void *echo(void *arg) {
   return ((void*)0);
 }
 
-int main(int argc, char *argv[]) {
-  // 端口号由参数提供
-  if (argc != 2) {
-    printf("No port provided!\n");
-    return 0;
-  }
-
+int main() {
   // 创建服务器
-  int port = atoi(argv[1]);
+  int port = 2014;
   int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   struct sockaddr_in serverAddress;
   memset(&serverAddress, 0, sizeof(serverAddress));
