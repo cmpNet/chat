@@ -8,11 +8,19 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void *echo(void *arg) {
-  int *clientSocket = (int*)arg;
+void *echo(void *client) {
+  int *clientSocket = (int*)client;
+
+  // 从客户端接数据
+  int bufferSize = 1024;
+  char receiveMessage[bufferSize];
+  recv(*clientSocket, receiveMessage, sizeof(receiveMessage), 0);
+  printf("Message form client: %s\n", receiveMessage);
+
   // 向客户端发数据
-  char str[] = "Hello World!";
-  write(*clientSocket, str, sizeof(str));
+  char sendMessage[] = "Hello Client!";
+  write(*clientSocket, sendMessage, sizeof(sendMessage));
+
   // 关闭客户端
   close(*clientSocket);
   return ((void*)0);

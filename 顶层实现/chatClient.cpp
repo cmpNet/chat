@@ -30,7 +30,6 @@ bool welcome() {
 }
 
 void signin(int port, int clientSocket) {
-  // TODO: 改为从服务器取回在线电脑的数组，可考虑类似 JSON 的方式
   struct sockaddr_in serverAddress;
   memset(&serverAddress, 0, sizeof(serverAddress));
   serverAddress.sin_family = AF_INET;  // IPv4
@@ -40,10 +39,15 @@ void signin(int port, int clientSocket) {
           (struct sockaddr*)&serverAddress,
           sizeof(serverAddress));
 
+  // 向服务器发送数据
+  int bufferSize = 1024;
+  char sendMessage[] = "Hello server!";
+  send(clientSocket, sendMessage, sizeof(sendMessage), 0);
+
   // 读回服务器的数据
-  char buffer[40];
-  read(clientSocket, buffer, sizeof(buffer) - 1);
-  printf("Message form server: %s\n", buffer);
+  char receiveMessage[bufferSize];
+  read(clientSocket, receiveMessage, sizeof(receiveMessage) - 1);
+  printf("Message form server: %s\n", receiveMessage);
 }
 
 int main() {
@@ -51,10 +55,12 @@ int main() {
     return 0;
 
   // 创建客户端
+  printf("Creating a client service...\n");
   int port = 2014;
   int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
   // 登录
+  printf("Receiving message from server...\n");
   signin(port, clientSocket);
 
   // 关闭客户端
