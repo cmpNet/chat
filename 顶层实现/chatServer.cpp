@@ -9,7 +9,16 @@
 #include <unistd.h>
 
 void *echo(void *client) {
-  int *clientSocket = (int*)client;
+  // 从 void* 中取出变量
+  struct sockaddr_in *clientAddress = (struct sockaddr_in *)((void**)client)[0];
+  socklen_t clientAddressSize = sizeof(*clientAddress);
+  int *clientSocket = (int *)((void**)client)[1];
+
+  // 获取客户端数据
+  getpeername(*clientSocket,
+              (struct sockaddr*)clientAddress,
+              &clientAddressSize);
+  printf("Client: %s\n", inet_ntoa(clientAddress->sin_addr));
 
   // 从客户端接数据
   int bufferSize = 1024;
@@ -49,7 +58,8 @@ int main() {
                               &clientAddressSize);
     if (clientSocket) {
       pthread_t tid;
-      if ((pthread_create(&tid, NULL, echo, (void*)&clientSocket))!= 0) {
+      void *client[2] = {&clientAddress, &clientSocket};
+      if ((pthread_create(&tid, NULL, echo, client))!= 0) {
         printf("Can't create thread!\n");
         return 0;
       }
