@@ -6,9 +6,13 @@
 #include <unistd.h>
 
 bool welcome() {
-  printf("=============== WELCOME TO SOCKETCHAT ===============\n");
+  printf("------------------------------------------------------\n");
+  printf("|                                                    |\n");
+  printf("|                WELCOME TO SOCKETCHAT               |\n");
+  printf("|                                                    |\n");
+  printf("------------------------------------------------------\n");
   while (1) {
-    printf("For signin, enter letter 'Y'; for exit, enter letter 'N': ");
+    printf("For signin, enter 'Y'; for exit, enter 'N': ");
     size_t maxSize = 2048;
     char *input = (char*)malloc(maxSize);
     getline(&input, &maxSize, stdin);
@@ -25,7 +29,7 @@ bool welcome() {
   }
 }
 
-void signin() {
+void signin(int port, int clientSocket) {
   // TODO: 改为从服务器取回在线电脑的数组，可考虑类似 JSON 的方式
   struct sockaddr_in serverAddress;
   memset(&serverAddress, 0, sizeof(serverAddress));
@@ -51,7 +55,7 @@ int main() {
   int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
   // 登录
-  signin();
+  signin(port, clientSocket);
 
   // 关闭客户端
   close(clientSocket);
