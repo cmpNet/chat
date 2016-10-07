@@ -6,11 +6,10 @@
 #include <unistd.h>
 
 bool welcome() {
-  printf("------------------------------------------------------\n");
-  printf("|                                                    |\n");
+  system("reset");
+  printf("+----------------------------------------------------+\n");
   printf("|                WELCOME TO SOCKETCHAT               |\n");
-  printf("|                                                    |\n");
-  printf("------------------------------------------------------\n");
+  printf("+----------------------------------------------------+\n");
   while (1) {
     printf("For signin, enter 'Y'; for exit, enter 'N': ");
     size_t maxSize = 2048;
