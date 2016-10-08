@@ -23,9 +23,52 @@ bool welcome() {
   }
 }
 
-void operate() {}
+void signout() {
+  int port = 2014;
+  int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+  struct sockaddr_in serverAddress;
+  memset(&serverAddress, 0, sizeof(serverAddress));
+  serverAddress.sin_family = AF_INET;  // IPv4
+  serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");  // 服务器
+  serverAddress.sin_port = htons(port);  // 端口
+  connect(clientSocket,
+          (struct sockaddr*)&serverAddress,
+          sizeof(serverAddress));
 
-void signin(int port, int clientSocket) {
+  // 向服务器发送数据
+  int bufferSize = 1024;
+  char sendMessage[] = "SignoutRequest";
+  send(clientSocket, sendMessage, sizeof(sendMessage), 0);
+
+  // 读回服务器的数据
+  char receiveMessage[bufferSize];
+  read(clientSocket, receiveMessage, sizeof(receiveMessage) - 1);
+  if (strcmp(receiveMessage, "Bye") == 0) {
+    printf("Sign out successfully!\n");
+    exit(0);
+  } else {
+    printf("[ERROR] Sign out failed! Please retry.\n");
+  }
+
+  // 关闭客户端
+  close(clientSocket);
+}
+
+void operate() {
+  while (1) {
+    printf("For exit, enter 'Q': ");
+    char input[1024];
+    scanf("%s", input);
+    if ((input[0] == 'Q' || input[0] == 'q') && strlen(input) == 1)
+      signout();
+    else
+      printf("[ERROR] Invalid input!\n");
+  }
+}
+
+void signin() {
+  int port = 2014;
+  int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
   struct sockaddr_in serverAddress;
   memset(&serverAddress, 0, sizeof(serverAddress));
   serverAddress.sin_family = AF_INET;  // IPv4
@@ -43,10 +86,14 @@ void signin(int port, int clientSocket) {
   // 读回服务器的数据
   char receiveMessage[bufferSize];
   read(clientSocket, receiveMessage, sizeof(receiveMessage) - 1);
-  printf("\nSign in Successfully! The online clients are following:\n");
+  printf("\nSign in successfully! The online clients are following:\n");
   printf("+-----------+----------------------+\n");
   printf("| Index     | Address              |\n");
   printf("+-----------+----------------------+\n");
+
+  // 关闭客户端
+  close(clientSocket);
+
   // 解析数据
   const char *split = "|";
   char *p;
@@ -68,15 +115,11 @@ int main() {
 
   // 创建客户端
   printf("- Creating a client service...\n");
-  int port = 2014;
-  int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
   // 登录
   printf("- Receiving message from server...\n");
-  printf("- Exit automatically if fails.\n");
-  signin(port, clientSocket);
+  printf("- Exit automatically if failed.\n");
+  signin();
 
-  // 关闭客户端
-  close(clientSocket);
   return 0;
 }

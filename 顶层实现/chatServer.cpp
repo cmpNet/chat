@@ -35,7 +35,7 @@ void *echo(void *client) {
     strcpy(onlineClients[index], inet_ntoa(clientAddress->sin_addr));
     numberOfOnlineClients++;
     // 向客户端发数据
-    char sendMessage[1024];
+    char sendMessage[bufferSize];
     int offset = 0;
     for (int i = 0; i < numberOfOnlineClients; i++) {
       if (i != numberOfOnlineClients - 1)
@@ -43,6 +43,21 @@ void *echo(void *client) {
       else
         sprintf(sendMessage + offset, "%s", onlineClients[i]);
     }
+    write(*clientSocket, sendMessage, sizeof(sendMessage));
+  } else if (strcmp(receiveMessage, "SignoutRequest") == 0) {
+    // 获取客户端的 IP
+    getpeername(*clientSocket,
+                (struct sockaddr*)clientAddress,
+                &clientAddressSize);
+    int index = numberOfOnlineClients;
+    for (int i = 0; i < index; i++)
+      if (strcmp(onlineClients[i], inet_ntoa(clientAddress->sin_addr)) == 0) {
+        for (int j = i; j < index - 1; j++)
+          strcmp(onlineClients[j], onlineClients[j + 1]);
+        index--;
+      }
+    // 向客户端发数据
+    char sendMessage[] = "Bye";
     write(*clientSocket, sendMessage, sizeof(sendMessage));
   }
 
