@@ -8,27 +8,43 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+char onlineClients[16][32];  // 在线客户端的 IP
+int numberOfOnlineClients = 0;  // 在线客户端的数量
+
 void *echo(void *client) {
   // 从 void* 中取出变量
   struct sockaddr_in *clientAddress = (struct sockaddr_in *)((void**)client)[0];
   socklen_t clientAddressSize = sizeof(*clientAddress);
   int *clientSocket = (int *)((void**)client)[1];
 
-  // 获取客户端数据
-  getpeername(*clientSocket,
-              (struct sockaddr*)clientAddress,
-              &clientAddressSize);
-  printf("Client: %s\n", inet_ntoa(clientAddress->sin_addr));
-
   // 从客户端接数据
   int bufferSize = 1024;
   char receiveMessage[bufferSize];
   recv(*clientSocket, receiveMessage, sizeof(receiveMessage), 0);
+
+  // 调试输出
   printf("Message form client: %s\n", receiveMessage);
 
-  // 向客户端发数据
-  char sendMessage[] = "Hello Client!";
-  write(*clientSocket, sendMessage, sizeof(sendMessage));
+  // 处理信息
+  if (strcmp(receiveMessage, "SigninRequest") == 0) {  // 登录请求
+    // 获取客户端的 IP
+    getpeername(*clientSocket,
+                (struct sockaddr*)clientAddress,
+                &clientAddressSize);
+    int index = numberOfOnlineClients;
+    strcpy(onlineClients[index], inet_ntoa(clientAddress->sin_addr));
+    numberOfOnlineClients++;
+    // 向客户端发数据
+    char sendMessage[1024];
+    int offset = 0;
+    for (int i = 0; i < numberOfOnlineClients; i++) {
+      if (i != numberOfOnlineClients - 1)
+        offset += sprintf(sendMessage + offset, "%s|", onlineClients[i]);
+      else
+        sprintf(sendMessage + offset, "%s", onlineClients[i]);
+    }
+    write(*clientSocket, sendMessage, sizeof(sendMessage));
+  }
 
   // 关闭客户端
   close(*clientSocket);
