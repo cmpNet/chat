@@ -57,13 +57,37 @@ void signout() {
   }
 }
 
+void groupchat() {
+  system("clear");
+  int bufferSize = 1024;
+  char temp[] = "GroupchatRequest";
+  char sendMessage[bufferSize];
+  char receiveMessage[bufferSize];
+  post(temp, receiveMessage);
+  printf("%s\n", receiveMessage);
+  printf("for checking message, enter [CHECK]\n");
+  printf("for exit ,enter [EXIT]\n");
+  char c = getchar();
+  while (1) {
+    fgets(sendMessage, bufferSize, stdin);
+    sendMessage[strlen(sendMessage) - 1] = '\0';
+    post(sendMessage, receiveMessage);
+    printf("%s\n", receiveMessage);
+    if (strcmp(receiveMessage, "EXIT") == 0) break;
+  }
+  system("clear");
+}
+
 void operate() {
   while (1) {
+    printf("For group chat enter 'G'\n");
     printf("For exit, enter 'Q': ");
     char input[1024];
     scanf("%s", input);
     if ((input[0] == 'Q' || input[0] == 'q') && strlen(input) == 1)
       signout();
+    else if ((input[0] == 'G' || input[0] == 'g') && strlen(input) == 1)
+      groupchat();
     else
       printf("[ERROR] Invalid input!\n");
   }
