@@ -7,15 +7,11 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <vector>
-#include <string>
-using namespace std;
 
 char onlineClients[16][32];  // 在线客户端的 IP
 int numberOfOnlineClients = 0;  // 在线客户端的数量
-enum MODE {GROUP, PEER, COMMAND};
-int mode = COMMAND;
-vector<string> groupChatMessages;
+// 群聊信息
+char groupchatMessages[16384];
 
 void *echo(void *client) {
   // 从 void* 中取出变量
@@ -25,6 +21,7 @@ void *echo(void *client) {
 
   // 从客户端接数据
   int bufferSize = 1024;
+  int maxBufferSize = 16384;
   char receiveMessage[bufferSize];
   recv(*clientSocket, receiveMessage, sizeof(receiveMessage), 0);
 
@@ -65,34 +62,27 @@ void *echo(void *client) {
     // 向客户端发数据
     char sendMessage[] = "Bye";
     write(*clientSocket, sendMessage, sizeof(sendMessage));
-  } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) { //  群聊请求
-    mode = GROUP;
-    char sendMessage[] = "GROUP mode";
-    write(*clientSocket, sendMessage, sizeof(sendMessage));
-  } else if (strcmp(receiveMessage, "CHECK") == 0) { //  查看消息
-    if (mode == GROUP) { //  查看群聊消息
-      string sendMessage = "";
-      if (groupChatMessages.size() > 0) {
-        sendMessage += groupChatMessages[0];
-      }
-      for (int i = 1; i < groupChatMessages.size(); ++i) {
-        sendMessage += "\n" + groupChatMessages[i];
-      }
-      write(*clientSocket, sendMessage.c_str(), sendMessage.length());
-    }
-  } else if (strcmp(receiveMessage, "EXIT") == 0) { //  退出聊天
-    if (mode == GROUP) { // 退出群聊
-      mode = COMMAND;
-      char sendMessage[] = "EXIT";
-      write(*clientSocket, sendMessage, sizeof(sendMessage));
-    }
-  } else { //  接收客户端消息
-    if (mode == GROUP) {
-      string ip(inet_ntoa(clientAddress->sin_addr));
-      string msg(receiveMessage);
-      groupChatMessages.push_back(ip + ": " + msg);
-      char sendMessage[] = "Server: Receive the message";
-      write(*clientSocket, sendMessage, sizeof(sendMessage));
+  } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) {
+    // 群聊请求
+    write(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+  } else {
+    char mode[4]; mode[3] = '\0';
+    for (int i = 0; i < 3; i++)
+      mode[i] = receiveMessage[i];
+    if (strcmp(mode, "|G|") == 0) {
+      // 添加发消息用户的 IP
+      strcat(groupchatMessages, inet_ntoa(clientAddress->sin_addr));
+      strcat(groupchatMessages, ": ");
+      // 添加消息内容
+      char temp[1024];
+      int i;
+      for (i = 0; i < sizeof(receiveMessage); i++)
+        temp[i] = receiveMessage[i + 3];
+      temp[i] = '\0';
+      strcat(groupchatMessages, temp);
+      // 添加分割符
+      strcat(groupchatMessages, "+");
+      write(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
     }
   }
 
@@ -104,6 +94,7 @@ void *echo(void *client) {
 int main() {
   // 创建服务器
   int port = 2014;
+  groupchatMessages[0] = '\0';
   int serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   struct sockaddr_in serverAddress;
   memset(&serverAddress, 0, sizeof(serverAddress));

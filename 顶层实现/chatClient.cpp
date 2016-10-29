@@ -1,9 +1,31 @@
 #include <arpa/inet.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <termios.h>
 #include <unistd.h>
+
+char getch_() {
+  char buf = 0;
+  struct termios old = {0};
+  if (tcgetattr(0, &old) < 0)
+    perror("tcsetattr()");
+  old.c_lflag &= ~ICANON;
+  old.c_lflag &= ~ECHO;
+  old.c_cc[VMIN] = 1;
+  old.c_cc[VTIME] = 0;
+  if (tcsetattr(0, TCSANOW, &old) < 0)
+    perror("tcsetattr ICANON");
+  if (read(0, &buf, 1) < 0)
+    perror("read()");
+  old.c_lflag |= ICANON;
+  old.c_lflag |= ECHO;
+  if (tcsetattr(0, TCSADRAIN, &old) < 0)
+    perror("tcsetattr ~ICANON");
+  return buf;
+}
 
 bool welcome() {
   system("reset");
@@ -57,30 +79,110 @@ void signout() {
   }
 }
 
+void operate();
+
+char input[1024];
+
+void* updateMessages(void* arg) {
+  while (1) {
+    usleep(15000);
+    int maxBufferSize = 16384;
+    char sendMessage[] = "GroupchatRequest";
+    char receiveMessage[maxBufferSize];
+    post(sendMessage, receiveMessage);
+    system("clear");
+    printf("+----------------------------------+\n");
+    printf("|            GROUP MODE            |\n");
+    printf("+----------------------------------+\n");
+    printf("Messages:\n");
+    const char *d = "+";
+    char *p;
+    p = strtok(receiveMessage, d);
+    while(p) {
+      printf("%s\n", p);
+      p = strtok(NULL, d);
+    }
+    printf("\n");
+    printf("Input ('N' to quit):\n%s\n", input);
+  }
+  return ((void*)0);
+}
+
+void* sendAMessage(void* arg) {
+  int maxBufferSize = 16384;
+  char sendMessage[maxBufferSize];
+  char receiveMessage[maxBufferSize];
+  while (1) {
+    printf("Input ('N' to quit):\n");
+    int c, size = 0;
+    while ((c = getch_()) != '\n') {
+      input[size] = c;
+      size++;
+      input[size] = '\0';
+    }
+    if ((input[0] == 'N' || input[0] == 'x') && strlen(input) == 1) {
+      break;
+    } else {
+      strcat(sendMessage, "|G|");  // 添加群聊的标签
+      strcat(sendMessage, input);
+      post(sendMessage, receiveMessage);
+      sendMessage[0] = '\0';
+      system("clear");
+      printf("+----------------------------------+\n");
+      printf("|            GROUP MODE            |\n");
+      printf("+----------------------------------+\n");
+      printf("Messages:\n");
+      const char *d = "+";
+      char *p;
+      p = strtok(receiveMessage, d);
+      while(p) {
+        printf("%s\n", p);
+        p = strtok(NULL, d);
+      }
+      printf("\n");
+    }
+    size = 0;
+    input[0] = '\0';
+  }
+  return ((void*)0);
+}
+
 void groupchat() {
   system("clear");
-  int bufferSize = 1024;
+  int maxBufferSize = 16384;
   char temp[] = "GroupchatRequest";
-  char sendMessage[bufferSize];
-  char receiveMessage[bufferSize];
+  char receiveMessage[maxBufferSize];
+  // 加入群聊模式
   post(temp, receiveMessage);
-  printf("%s\n", receiveMessage);
-  printf("for checking message, enter [CHECK]\n");
-  printf("for exit ,enter [EXIT]\n");
-  char c = getchar();
-  while (1) {
-    fgets(sendMessage, bufferSize, stdin);
-    sendMessage[strlen(sendMessage) - 1] = '\0';
-    post(sendMessage, receiveMessage);
-    printf("%s\n", receiveMessage);
-    if (strcmp(receiveMessage, "EXIT") == 0) break;
+  printf("+----------------------------------+\n");
+  printf("|            GROUP MODE            |\n");
+  printf("+----------------------------------+\n");
+  printf("Messages:\n");
+  const char *d = "+";
+  char *p;
+  p = strtok(receiveMessage, d);
+  while(p) {
+    printf("%s\n", p);
+    p = strtok(NULL, d);
   }
-  system("clear");
+  printf("\n");
+  pthread_t update_, send_;
+  // 更新消息
+  if ((pthread_create(&update_, NULL, updateMessages, NULL))!= 0) {
+    printf("Can't create thread!\n");
+    exit(0);
+  }
+  // 发送消息
+  if ((pthread_create(&send_, NULL, sendAMessage, NULL))!= 0) {
+    printf("Can't create thread!\n");
+    exit(0);
+  }
+  operate();
 }
 
 void operate() {
   while (1) {
-    printf("For group chat enter 'G'\n");
+    printf("For group chat enter 'G';\n");
     printf("For exit, enter 'Q': ");
     char input[1024];
     scanf("%s", input);
