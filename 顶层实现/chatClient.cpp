@@ -120,8 +120,10 @@ void getUpdate(char *sendMessage) {
   printf("\n");
 }
 
+int stop = 1;
+
 void* updateMessages(void* arg) {
-  while (1) {
+  while (stop) {
     // 更新消息
     getUpdate();
     sleep(1);
@@ -142,6 +144,10 @@ void* sendAMessage(void* arg) {
       input[size] = '\0';
       getUpdate();
     } else if (c == '\n') {
+      if (strcmp(input, "N") == 0 || strcmp(input, "n") == 0) {
+        stop = 0;
+        break;
+      }
       char sendMessage[] = "|G|";
       strcat(sendMessage, input);
       getUpdate(sendMessage);
@@ -174,11 +180,14 @@ void groupchat() {
   }
   pthread_join(update_, NULL);
   pthread_join(send_, NULL);
-  operate();
+  signout();
 }
 
 void operate() {
   while (1) {
+    printf("+----------------------------------+\n");
+    printf("|               HOME               |\n");
+    printf("+----------------------------------+\n");
     printf("For group chat enter 'G';\n");
     printf("For exit, enter 'Q': ");
     char input[1024];
