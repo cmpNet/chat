@@ -9,18 +9,18 @@ char* create_packet(in_addr_t source_ip, in_addr_t dst_ip, FLAG flag, int seqnr,
 
 	strcpy(packet_data, data);
 	packet_data[data_len] = '\0';
-	
+
 	/*
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = 0;
 	iph->tot_len = sizeof (struct iphdr) + sizeof (struct tcphdr) + data_len + 13;
-	iph->id = htonl (54321);	
+	iph->id = htonl (54321);
 	iph->frag_off = 0;
 	iph->ttl = 255;
 	iph->protocol = IPPROTO_TCP;
-	iph->check = 0;		
-	iph->saddr = source_ip;	
+	iph->check = 0;
+	iph->saddr = source_ip;
 	iph->daddr = dst_ip;
 	*/
 
@@ -39,7 +39,7 @@ char* create_packet(in_addr_t source_ip, in_addr_t dst_ip, FLAG flag, int seqnr,
 	else if (flag == PSH) tcph->psh = 1;
 	else if (flag == URG) tcph->urg = 1;
 	else if (flag == SYN_ACK) {tcph->syn = 1; tcph->ack = 1;}
-	
+
 	return packet;
 }
 
@@ -60,10 +60,10 @@ int my_recv(tcb_t* tcpblock) {
 	while (1) {
 		ssize_t n = recv(tcpblock->revfd, tcpblock->buffer, sizeof(tcpblock->buffer), 0);
 		if (n == -1) {
-	        printf("recv error!\n");
+	        // printf("recv error!\n");
 	        return -1;
 	    } else if (n == 0) {
-			return 0;			
+			return 0;
 		}
 		struct iphdr *ip = (struct iphdr*)(tcpblock->buffer);
 		if (ip->daddr != tcpblock->our_ipaddr || ip->protocol != IPPROTO_TCP)
@@ -78,12 +78,12 @@ int my_recv(tcb_t* tcpblock) {
 
 int send_syn_ack(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int their_port, int seqnr, int sockfd) {
 	char* packet = create_packet(our_ipaddr, their_ipaddr, SYN_ACK, seqnr, our_port, their_port, "", 0);
-	
+
 	if (send_packet(packet, their_ipaddr, their_port, sockfd) < 0) {
 		perror("Send SYN_ACK failed.\n");
 		return -1;
 	} else {
-		printf("Send SYN_ACK.\n");
+		// printf("Send SYN_ACK.\n");
 	}
 
 	return 0;
@@ -91,12 +91,12 @@ int send_syn_ack(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int
 
 int send_syn(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int their_port, int seqnr, int sockfd) {
 	char* packet = create_packet(our_ipaddr, their_ipaddr, SYN, seqnr, our_port, their_port, "", 0);
-	
+
 	if (send_packet(packet, their_ipaddr, their_port, sockfd) < 0 < 0) {
 		perror("Send SYN failed.\n");
 		return -1;
 	} else {
-		printf("Send SYN.\n");
+		// printf("Send SYN.\n");
 	}
 
 	return 0;
@@ -109,7 +109,7 @@ int send_ack(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int the
 		perror("Send ACK failed.\n");
 		return -1;
 	} else {
-		printf("Send ACK.\n");
+		// printf("Send ACK.\n");
 	}
 
 	return 0;
@@ -122,11 +122,8 @@ int send_data(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int th
 		perror("Send data failed.\n");
 		return -1;
 	} else {
-		printf("Send data.\n");
+		// printf("Send data.\n");
 	}
 
 	return 0;
 }
-
-
-

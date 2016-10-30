@@ -9,9 +9,6 @@
 #include <unistd.h>
 // 自己实现的 API
 #include "../bottom/common.h"
-#include "../bottom/monitor.cpp"
-#include "../bottom/mySocket.cpp"
-#include "../bottom/net.h"
 
 // 在 Linux 实现 Windows 上的 getch 函数
 char getch_() {
@@ -56,19 +53,13 @@ bool welcome() {
 void post(char *sendMessage, char *receiveMessage) {
   int bufferSize = 1024;
   int port = 2014;
-  int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_in serverAddress;
-  memset(&serverAddress, 0, sizeof(serverAddress));
-  serverAddress.sin_family = AF_INET;  // IPv4
-  serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");  // 服务器
-  serverAddress.sin_port = htons(port);  // 端口
-  connect(clientSocket,
-          (struct sockaddr*)&serverAddress,
-          sizeof(serverAddress));
+  int clientSocket = getSocket();
+  connect(clientSocket, "127.0.0.1", port);
   // 向服务器发送数据
-  send(clientSocket, sendMessage, strlen(sendMessage), 0);
+  myWrite(clientSocket, sendMessage, bufferSize);
   // 读回服务器的数据
-  read(clientSocket, receiveMessage, bufferSize);
+  int len = 0;
+  myRead(clientSocket, receiveMessage, &len);
   // 关闭客户端
   close(clientSocket);
 }

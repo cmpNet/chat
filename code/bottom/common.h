@@ -29,7 +29,7 @@ using std::vector;
 #include <netinet/ether.h>
 #include <unistd.h>
 
-#define PACKETLEN 1024 * 4 
+#define PACKETLEN 1024 * 4
 
 typedef enum {
 	FIN, SYN, RST, PSH, ACK, SYN_ACK, URG, NONE
@@ -62,6 +62,7 @@ int getSocket();
 
 // 成功的话返回1，失败的话返回-1
 int bind(int serverSocket, const char ip[]);
+
 // 成功的话返回1，失败的话返回-1
 int listen(int serverSocket, int port);
 
@@ -72,10 +73,14 @@ int accept(int serverSocket);
 int connect(int socket, const char ip[], int port);
 
 // 成功的话返回1，失败的话返回-1
-int read(int socket, char messageBuffer[], int* bufferLen);
+int myRead(int socket, char messageBuffer[], int* bufferLen);
+
 // 成功的话返回1，失败的话返回-1
-int write(int socket, char message[], int len);
+int myWrite(int socket, char message[], int len);
+
 // 成功的话返回1，失败的话返回-1
 int close(int socket);
+
+in_addr_t getPeerIp(int socket);
 
 #endif
