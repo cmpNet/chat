@@ -183,17 +183,27 @@ void groupchat() {
   signout();
 }
 
+void peerchat() {
+  printf("Please enter a valid IP:\n");
+  char peer[32];
+  scanf("%s", peer);
+  signout();
+}
+
 void operate() {
   while (1) {
     printf("+----------------------------------+\n");
     printf("|               HOME               |\n");
     printf("+----------------------------------+\n");
-    printf("For group chat enter 'G';\n");
+    printf("For groupchat enter 'G';\n");
+    printf("For peerchat enter 'P';\n");
     printf("For exit, enter 'Q': ");
     char input[1024];
     scanf("%s", input);
     if ((input[0] == 'Q' || input[0] == 'q') && strlen(input) == 1)
       signout();
+    else if ((input[0] == 'P' || input[0] == 'p') && strlen(input) == 1)
+      peerchat();
     else if ((input[0] == 'G' || input[0] == 'g') && strlen(input) == 1)
       groupchat();
     else
