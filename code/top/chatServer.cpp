@@ -31,10 +31,11 @@ void *echo(void *client) {
   char receiveBuffer[bufferSize];
   int len = 0;
   myRead(*clientSocket, receiveMessage, &len);
+  // printf("debug: %s\n", receiveMessage);
   char peerIP[bufferSize];
-  in_addr_t IP_i = getPeerIp(*clientSocket);
-  strcpy(peerIP, inet_ntoa(*((struct in_addr*)&IP_i)));
-  printf("%d\n", IP_i);
+  in_addr_t temp = getPeerIp(*clientSocket);
+  unsigned char* p = (unsigned char*)&temp;
+  sprintf(peerIP, "%u.%u.%u.%u", p[0], p[1], p[2], p[3]);
 
   // 调试输出
   printf("Message form client: %s\n", receiveMessage);
@@ -69,7 +70,9 @@ void *echo(void *client) {
     myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
   } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) {
     // 群聊请求
+    printf("debug: before send\n");
     myWrite(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+    printf("debug: after send\n");
   } else if (strcmp(strncpy(receiveBuffer, receiveMessage, 15), "PeerchatRequest") == 0) {
     int i;
     for (i = 0; i < strlen(receiveMessage) - strlen(receiveBuffer); i++)
@@ -144,7 +147,6 @@ void *echo(void *client) {
       myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
     }
   }
-
   // 关闭客户端
   close(*clientSocket);
   return ((void*)0);
@@ -155,7 +157,7 @@ int main() {
   int port = 2014;
   groupchatMessages[0] = '\0';
   int serverSocket = getSocket();
-  bind(serverSocket, "192.168.199.215");  // 设置服务器 IP
+  bind(serverSocket, "127.0.0.1");  // 设置服务器 IP
   printf("Server is running on port %d.\n", port);
   listen(serverSocket, port);
   // 监听

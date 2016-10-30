@@ -7,7 +7,11 @@ int main(int argc, char const *argv[])
 	char message[4096];
 	int len = 0;
 	read(socket, message, &len);
-	char data2[] = "message2";
-	write(socket, data2, 8);
+	for (int i = 0; i < len; i++)
+		printf("%c", message[i]);
+	printf("\n");
+	
+	char data[] = "mes2";
+	write(socket, data, 8);
 	return 0;
 }

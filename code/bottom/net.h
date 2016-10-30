@@ -68,13 +68,14 @@ int my_recv(tcb_t* tcpblock) {
 		}
 		struct iphdr *ip = (struct iphdr*)(tcpblock->buffer);
 		unsigned char* p = (unsigned char*)&ip->saddr;
-		//printf("Source IP: %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
 		if (ip->daddr != tcpblock->our_ipaddr || ip->protocol != IPPROTO_TCP)
 			continue;
 		struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
+		//printf("Source IP: %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+		//printf("Port: %d %d\n", htons(tcp->dest), tcpblock->our_port);
 		if (htons(tcp->dest) != tcpblock->our_port)
 			continue;
-		printf("Port: %d\n", htons(tcp->dest));
+		//printf("%d\n", htons(tcp->dest));
 		break;
 	}
 	return 1;
@@ -87,7 +88,7 @@ int send_syn_ack(in_addr_t our_ipaddr, in_addr_t their_ipaddr, int our_port, int
 		perror("Send SYN_ACK failed.\n");
 		return -1;
 	} else {
-		printf("Send SYN_ACK.\n");
+		// printf("Send SYN_ACK.\n");
 	}
 
 	return 0;

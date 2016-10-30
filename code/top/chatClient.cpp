@@ -56,6 +56,7 @@ void post(char *sendMessage, char *receiveMessage) {
   int clientSocket = getSocket();
   connect(clientSocket, "127.0.0.1", port);
   // 向服务器发送数据
+  // printf("debug: %s\n", sendMessage);
   myWrite(clientSocket, sendMessage, bufferSize);
   // 读回服务器的数据
   int len = 0;

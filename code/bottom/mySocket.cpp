@@ -69,7 +69,7 @@ int listen(int serverSocket, int port) {
 }
 
 int serverConnection(in_addr_t srcIp, in_addr_t dstIp, int dstPort) {
-	static int port_number = 1000;
+	static int port_number = 2000;
 
 	int conSocket = getSocket();
 	if (conSocket == -1)
@@ -85,16 +85,9 @@ int serverConnection(in_addr_t srcIp, in_addr_t dstIp, int dstPort) {
 	port_number++;
 	//Todo: 发送SYN_ACK, 使用my_recv获取ACK包，得到ACK后设置状态为S_ESTABLISHED
 	send_syn_ack(srcIp, dstIp, conTcb -> our_port , dstPort, 0, conTcb->sockfd);
-	while(1) {
-		my_recv(conTcb);
-		struct iphdr* ip = (struct iphdr*)(conTcb->buffer);
-		struct tcphdr *tcp = (struct tcphdr *)(conTcb->buffer + sizeof(struct iphdr));
-		printf("lala\n");
-		if (tcp->ack == 1) {
-			printf("Receive ACK\n");
-			break;
-		}
-	}
+	my_recv(conTcb);
+	struct iphdr* ip = (struct iphdr*)(conTcb->buffer);
+	struct tcphdr *tcp = (struct tcphdr *)(conTcb->buffer + sizeof(struct iphdr));
 	conTcb -> state = S_ESTABLISHED;
 
 	return conSocket;
@@ -108,7 +101,7 @@ int accept(int serverSocket) {
 
 	while (1) {
 		my_recv(tcpblock);
-		printf("Some packet\n");
+		// printf("Some packet\n");
 		struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
 		struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
 		if (/*tcp->ack == 0 &&*/ tcp->syn == 1) {
@@ -140,24 +133,22 @@ int connect(int ClientSocket, const char ip_s[], int port) {
 		struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
 
 		if (tcp->ack == 1 && tcp->syn == 1) {
-			newPort = htons(tcp->dest);
+			newPort = htons(tcp->source);
 			break;
 		}
 	}
 	tcpblock -> state = S_ESTABLISHED;
-
-	int isSuccess = send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
-
 	tcpblock->their_port = newPort;
+	int isSuccess = send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
 	return isSuccess;
 }
 
 int myRead(int serverSocket, char messageBuffer[], int* bufferLen) {
-	printf("read start\n");
+	// printf("read start\n");
 	tcb_t* tcpblock = getTcpBlock(serverSocket);
 	if (tcpblock == NULL || tcpblock->state != S_ESTABLISHED)
 		return -1;
-	printf("read...\n");
+	// printf("read...\n");
 	// Todo: 使用my_recv读取数据，发送ACK
 	my_recv(tcpblock);
 	struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
@@ -168,11 +159,11 @@ int myRead(int serverSocket, char messageBuffer[], int* bufferLen) {
 		messageBuffer[data_count] = data[data_count];
 		data_count++;
 	}
-	printf("%d\n", data_count);
+	// printf("%d\n", data_count);
 	*bufferLen = data_count;
-	for (int i = 0; i < data_count; i++)
-		printf("%c", messageBuffer[i]);
-	printf("\n");
+	// for (int i = 0; i < data_count; i++)
+	// 	 printf("%c", data[i]);
+	// printf("\n");
 	return send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
 }
 
@@ -204,7 +195,7 @@ int close(int serverSocket) {
 
 in_addr_t getPeerIp(int serverSocket) {
 	tcb_t* tcpblock = getTcpBlock(serverSocket);
-	if (tcpblock == NULL || tcpblock->state != S_CONFIG)
+	if (tcpblock == NULL)
 		return -1;
 	return tcpblock->their_ipaddr;
 }
