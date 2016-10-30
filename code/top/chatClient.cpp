@@ -1,3 +1,4 @@
+// 使用 Linux 的 API
 #include <arpa/inet.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -6,6 +7,11 @@
 #include <sys/socket.h>
 #include <termios.h>
 #include <unistd.h>
+// 自己实现的 API
+#include "../bottom/common.h"
+#include "../bottom/monitor.cpp"
+#include "../bottom/mySocket.cpp"
+#include "../bottom/net.h"
 
 // 在 Linux 实现 Windows 上的 getch 函数
 char getch_() {

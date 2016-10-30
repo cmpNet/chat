@@ -7,6 +7,11 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+// 自己实现的 API
+#include "../bottom/common.h"
+#include "../bottom/monitor.cpp"
+#include "../bottom/mySocket.cpp"
+#include "../bottom/net.h"
 
 char onlineClients[16][32];  // 在线客户端的 IP
 int numberOfOnlineClients = 0;  // 在线客户端的数量
