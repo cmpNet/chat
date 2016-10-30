@@ -12,6 +12,10 @@ char onlineClients[16][32];  // 在线客户端的 IP
 int numberOfOnlineClients = 0;  // 在线客户端的数量
 // 群聊信息
 char groupchatMessages[16384];
+char peerchatMessages[128][1024];
+int numberOfPeerchatMessages = 0;
+// peercharMessages 格式形如 127.0.0.1|127.0.0.2: hello
+// 第一个 IP 为收方 IP，第二个 IP 为发方 IP，最后是信息内容
 
 void *echo(void *client) {
   // 从 void* 中取出变量
@@ -23,6 +27,7 @@ void *echo(void *client) {
   int bufferSize = 1024;
   int maxBufferSize = 16384;
   char receiveMessage[bufferSize];
+  char receiveBuffer[bufferSize];
   recv(*clientSocket, receiveMessage, sizeof(receiveMessage), 0);
 
   // 调试输出
@@ -65,6 +70,26 @@ void *echo(void *client) {
   } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) {
     // 群聊请求
     write(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+  } else if (strcmp(strncpy(receiveBuffer, receiveMessage, 15), "PeerchatRequest") == 0) {
+    int i;
+    for (i = 0; i < strlen(receiveMessage) - strlen(receiveBuffer); i++)
+      receiveBuffer[i] = receiveMessage[i + 15];
+    receiveBuffer[i] = '\0';  // 收方 IP
+    char senderIP[32];  // 发方 IP
+    strcpy(senderIP, inet_ntoa(clientAddress->sin_addr));
+    char tag1[1024], tag2[1024];  // 构造用于查找 peercharMessages 里符合要求的消息
+    // 根据标签查找
+    strcpy(tag1, strcat(senderIP, "|")); strcat(tag1, receiveBuffer);  // 发方 IP|收方 IP
+    strcpy(tag2, strcat(receiveBuffer, "|")); strcat(tag2, senderIP);  // 收方 IP|发方 IP
+    char sendMessage[maxBufferSize];
+    for (i = 0; i < numberOfPeerchatMessages; i++)
+      if (strstr(peerchatMessages[i], tag1) != NULL ||
+          strstr(peerchatMessages[i], tag2) != NULL) {
+        char *location = strstr(peerchatMessages[i], "|") + 1;
+        strcat(sendMessage, location);
+        strcat(sendMessage, "+");
+      }
+    write(*clientSocket, sendMessage, sizeof(sendMessage));
   } else {
     char mode[4]; mode[3] = '\0';
     for (int i = 0; i < 3; i++)
@@ -83,6 +108,40 @@ void *echo(void *client) {
       // 添加分割符
       strcat(groupchatMessages, "+");
       write(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+    } else if (strcmp(mode, "|P|") == 0) {
+      char receiverIP[36];  // 收方 IP
+      int i, j;
+      for (i = 0; i < 36; i++) {
+        if (receiveMessage[i + 3] == '|')
+          break;
+        receiverIP[i] = receiveMessage[i + 3];
+      }
+      receiverIP[i] = '\0';
+      char senderIP[36];  // 发方 IP
+      strcpy(senderIP, inet_ntoa(clientAddress->sin_addr));
+      strcpy(peerchatMessages[numberOfPeerchatMessages], receiverIP);
+      strcat(peerchatMessages[numberOfPeerchatMessages], "|");
+      strcat(peerchatMessages[numberOfPeerchatMessages], senderIP);
+      strcat(peerchatMessages[numberOfPeerchatMessages], ": ");
+      int start = strlen(peerchatMessages[numberOfPeerchatMessages]);
+      for (j = 0; j < strlen(receiveMessage) - i - 3; j++)
+        peerchatMessages[numberOfPeerchatMessages][j + start] = receiveMessage[i + j + 4];
+      peerchatMessages[numberOfPeerchatMessages][j + start] = '\0';
+      numberOfPeerchatMessages++;
+      // 写回信息
+      char tag1[1024], tag2[1024];  // 构造用于查找 peercharMessages 里符合要求的消息
+      // 根据标签查找
+      strcpy(tag1, strcat(senderIP, "|")); strcat(tag1, receiverIP);  // 发方 IP|收方 IP
+      strcpy(tag2, strcat(receiverIP, "|")); strcat(tag2, senderIP);  // 收方 IP|发方 IP
+      char sendMessage[maxBufferSize];
+      for (i = 0; i < numberOfPeerchatMessages; i++)
+        if (strstr(peerchatMessages[i], tag1) != NULL ||
+            strstr(peerchatMessages[i], tag2) != NULL) {
+          char *location = strstr(peerchatMessages[i], "|") + 1;
+          strcat(sendMessage, location);
+          strcat(sendMessage, "+");
+        }
+      write(*clientSocket, sendMessage, sizeof(sendMessage));
     }
   }
 

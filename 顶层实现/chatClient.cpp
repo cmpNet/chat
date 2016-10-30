@@ -183,10 +183,104 @@ void groupchat() {
   signout();
 }
 
+void printPeer(char* receiveMessage) {
+  system("clear");
+  printf("+----------------------------------+\n");
+  printf("|             PEER MODE            |\n");
+  printf("+----------------------------------+\n");
+  printf("Messages:\n");
+  const char *d = "+";
+  char *p;
+  p = strtok(receiveMessage, d);
+  while (p) {
+    printf("%s\n", p);
+    p = strtok(NULL, d);
+  }
+  printf("\n");
+}
+
+void getPeerUpdate() {
+  int maxBufferSize = 16384;
+  char receiveMessage[maxBufferSize];
+  char sendMessage[] = "PeerchatRequest";
+  post(sendMessage, receiveMessage);
+  printPeer(receiveMessage);
+  printf("Input ('N' to quit, '-' to delete):\n%s", input);
+  printf("\n");
+}
+
+void getPeerUpdate(char *sendMessage) {
+  int maxBufferSize = 16384;
+  char receiveMessage[maxBufferSize];
+  post(sendMessage, receiveMessage);
+  printPeer(receiveMessage);
+  printf("Input ('N' to quit, '-' to delete):\n%s", input);
+  printf("\n");
+}
+
+char peer[32];  // 与客户端聊天的 peer 的 IP
+
+void* updatePeerMessages(void* arg) {
+  while (stop) {
+    // 更新消息
+    getPeerUpdate();
+    sleep(1);
+  }
+  return ((void*)0);
+}
+
+void* sendAPeerMessage(void* arg) {
+  while (1) {
+    c = getch_();
+    if (c == '-') {
+      size--;
+      input[size] = '\0';
+      getPeerUpdate();
+    } else if (c != '\n') {
+      input[size] = c;
+      size++;
+      input[size] = '\0';
+      getPeerUpdate();
+    } else if (c == '\n') {
+      if (strcmp(input, "N") == 0 || strcmp(input, "n") == 0) {
+        stop = 0;
+        break;
+      }
+      char sendMessage[] = "|P|";
+      strcat(sendMessage, peer);
+      strcat(sendMessage, "|");
+      strcat(sendMessage, input);
+      getPeerUpdate(sendMessage);
+      input[0] = '\0';
+      size = 0;
+    }
+  }
+  return ((void*)0);
+}
+
 void peerchat() {
   printf("Please enter a valid IP:\n");
-  char peer[32];
   scanf("%s", peer);
+  stop = 1;
+  int bufferSize = 1024;
+  char sendMessage[] = "PeerchatRequest";
+  strcat(sendMessage, peer);
+  char receiveMessage[bufferSize];
+  post(sendMessage, receiveMessage);
+  printPeer(receiveMessage);
+  pthread_t update_, send_;
+  // 更新消息
+  if (pthread_create(&update_, NULL, updatePeerMessages, NULL) != 0) {
+    printf("Can't create thread!\n");
+    exit(0);
+  }
+  // 发送消息
+  if (pthread_create(&send_, NULL, sendAPeerMessage, NULL) != 0) {
+    printf("Can't create thread!\n");
+    exit(0);
+  }
+  pthread_join(update_, NULL);
+  pthread_join(send_, NULL);
   signout();
 }
 
