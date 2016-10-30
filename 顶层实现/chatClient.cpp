@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <unistd.h>
 
+// 在 Linux 实现 Windows 上的 getch 函数
 char getch_() {
   char buf = 0;
   struct termios old = {0};
@@ -81,79 +82,8 @@ void signout() {
 
 void operate();
 
-char input[1024];
-
-void* updateMessages(void* arg) {
-  while (1) {
-    usleep(15000);
-    int maxBufferSize = 16384;
-    char sendMessage[] = "GroupchatRequest";
-    char receiveMessage[maxBufferSize];
-    post(sendMessage, receiveMessage);
-    system("clear");
-    printf("+----------------------------------+\n");
-    printf("|            GROUP MODE            |\n");
-    printf("+----------------------------------+\n");
-    printf("Messages:\n");
-    const char *d = "+";
-    char *p;
-    p = strtok(receiveMessage, d);
-    while(p) {
-      printf("%s\n", p);
-      p = strtok(NULL, d);
-    }
-    printf("\n");
-    printf("Input ('N' to quit):\n%s\n", input);
-  }
-  return ((void*)0);
-}
-
-void* sendAMessage(void* arg) {
-  int maxBufferSize = 16384;
-  char sendMessage[maxBufferSize];
-  char receiveMessage[maxBufferSize];
-  while (1) {
-    printf("Input ('N' to quit):\n");
-    int c, size = 0;
-    while ((c = getch_()) != '\n') {
-      input[size] = c;
-      size++;
-      input[size] = '\0';
-    }
-    if ((input[0] == 'N' || input[0] == 'x') && strlen(input) == 1) {
-      break;
-    } else {
-      strcat(sendMessage, "|G|");  // 添加群聊的标签
-      strcat(sendMessage, input);
-      post(sendMessage, receiveMessage);
-      sendMessage[0] = '\0';
-      system("clear");
-      printf("+----------------------------------+\n");
-      printf("|            GROUP MODE            |\n");
-      printf("+----------------------------------+\n");
-      printf("Messages:\n");
-      const char *d = "+";
-      char *p;
-      p = strtok(receiveMessage, d);
-      while(p) {
-        printf("%s\n", p);
-        p = strtok(NULL, d);
-      }
-      printf("\n");
-    }
-    size = 0;
-    input[0] = '\0';
-  }
-  return ((void*)0);
-}
-
-void groupchat() {
+void printGroup(char* receiveMessage) {
   system("clear");
-  int maxBufferSize = 16384;
-  char temp[] = "GroupchatRequest";
-  char receiveMessage[maxBufferSize];
-  // 加入群聊模式
-  post(temp, receiveMessage);
   printf("+----------------------------------+\n");
   printf("|            GROUP MODE            |\n");
   printf("+----------------------------------+\n");
@@ -161,22 +91,89 @@ void groupchat() {
   const char *d = "+";
   char *p;
   p = strtok(receiveMessage, d);
-  while(p) {
+  while (p) {
     printf("%s\n", p);
     p = strtok(NULL, d);
   }
   printf("\n");
+}
+
+char input[1024];
+int c, size;
+
+void getUpdate() {
+  int maxBufferSize = 16384;
+  char receiveMessage[maxBufferSize];
+  char sendMessage[] = "GroupchatRequest";
+  post(sendMessage, receiveMessage);
+  printGroup(receiveMessage);
+  printf("Input ('N' to quit, '-' to delete):\n%s", input);
+  printf("\n");
+}
+
+void getUpdate(char *sendMessage) {
+  int maxBufferSize = 16384;
+  char receiveMessage[maxBufferSize];
+  post(sendMessage, receiveMessage);
+  printGroup(receiveMessage);
+  printf("Input ('N' to quit, '-' to delete):\n%s", input);
+  printf("\n");
+}
+
+void* updateMessages(void* arg) {
+  while (1) {
+    // 更新消息
+    getUpdate();
+    sleep(1);
+  }
+  return ((void*)0);
+}
+
+void* sendAMessage(void* arg) {
+  while (1) {
+    c = getch_();
+    if (c == '-') {
+      size--;
+      input[size] = '\0';
+      getUpdate();
+    } else if (c != '\n') {
+      input[size] = c;
+      size++;
+      input[size] = '\0';
+      getUpdate();
+    } else if (c == '\n') {
+      char sendMessage[] = "|G|";
+      strcat(sendMessage, input);
+      getUpdate(sendMessage);
+      input[0] = '\0';
+      size = 0;
+    }
+  }
+  return ((void*)0);
+}
+
+void groupchat() {
+  int maxBufferSize = 16384;
+  char sendMessage[] = "GroupchatRequest";
+  char receiveMessage[maxBufferSize];
+  input[0] = '\0';
+  size = 0;
+  // 加入群聊模式
+  post(sendMessage, receiveMessage);
+  printGroup(receiveMessage);
   pthread_t update_, send_;
   // 更新消息
-  if ((pthread_create(&update_, NULL, updateMessages, NULL))!= 0) {
+  if (pthread_create(&update_, NULL, updateMessages, NULL) != 0) {
     printf("Can't create thread!\n");
     exit(0);
   }
   // 发送消息
-  if ((pthread_create(&send_, NULL, sendAMessage, NULL))!= 0) {
+  if (pthread_create(&send_, NULL, sendAMessage, NULL) != 0) {
     printf("Can't create thread!\n");
     exit(0);
   }
+  pthread_join(update_, NULL);
+  pthread_join(send_, NULL);
   operate();
 }
 
