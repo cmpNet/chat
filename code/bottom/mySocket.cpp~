@@ -28,7 +28,7 @@ int getSocket() {
 		return -1;
 	}
 
-	tcpblock->revfd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
+	tcpblock->revfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP);
 	if (tcpblock->revfd == -1) {
 		perror("Failed to create receiving raw socket.\n");
 		return -1;

@@ -155,7 +155,7 @@ int main() {
   int port = 2014;
   groupchatMessages[0] = '\0';
   int serverSocket = getSocket();
-  bind(serverSocket, "127.0.0.1");  // 设置服务器 IP
+  bind(serverSocket, "192.168.199.215");  // 设置服务器 IP
   printf("Server is running on port %d.\n", port);
   listen(serverSocket, port);
   // 监听
