@@ -59,12 +59,11 @@ void *echo(void *client) {
     myWrite(*clientSocket, sendMessage, strlen(sendMessage) + 1);
   } else if (strcmp(receiveMessage, "SignoutRequest") == 0) {
     // 获取客户端的 IP
-    int index = numberOfOnlineClients;
-    for (int i = 0; i < index; i++)
+    for (int i = 0; i < numberOfOnlineClients; i++)
       if (strcmp(onlineClients[i], peerIP) == 0) {
-        for (int j = i; j < index - 1; j++)
+        for (int j = i; j < numberOfOnlineClients - 1; j++)
           strcmp(onlineClients[j], onlineClients[j + 1]);
-        index--;
+        numberOfOnlineClients--;
       }
     // 向客户端发数据
     char sendMessage[] = "Bye";
@@ -158,7 +157,7 @@ int main() {
   int port = 2014;
   groupchatMessages[0] = '\0';
   int serverSocket = getSocket();
-  bind(serverSocket, "172.19.111.100");  // 设置服务器 IP
+  bind(serverSocket, "127.0.0.1");  // 设置服务器 IP
   printf("Server is running on port %d.\n", port);
   listen(serverSocket, port);
   // 监听

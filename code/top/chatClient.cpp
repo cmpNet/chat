@@ -54,7 +54,7 @@ void post(char *sendMessage, char *receiveMessage) {
   int bufferSize = 1024;
   int port = 2014;
   int clientSocket = getSocket();
-  connect(clientSocket, "172.19.111.100", port);
+  connect(clientSocket, "127.0.0.1", port);
   // 向服务器发送数据
   // printf("debug: %s\n", sendMessage);
   myWrite(clientSocket, sendMessage, bufferSize);

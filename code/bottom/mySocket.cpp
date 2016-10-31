@@ -118,7 +118,7 @@ int connect(int ClientSocket, const char ip_s[], int port) {
 	if (tcpblock == NULL || tcpblock->state != S_CONFIG)
 		return -1;
 	// Todo: 获得本机IP，随机设置端口号
-	tcpblock -> our_ipaddr = inet_addr("172.19.111.100");
+	tcpblock -> our_ipaddr = inet_addr("127.0.0.1");
 	tcpblock -> our_port = port_number;
 	port_number++;
 
