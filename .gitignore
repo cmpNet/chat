@@ -3,6 +3,8 @@
 
 # 忽略输出文件
 */a.out
+code/client
+code/server
 
 # 忽略 Linux 下的编译文件
 *.h.gch

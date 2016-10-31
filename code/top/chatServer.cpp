@@ -25,7 +25,7 @@ void *echo(void *client) {
   int *clientSocket = (int *)client;
 
   // 从客户端接数据
-  int bufferSize = 1024;
+  int bufferSize = 32;
   int maxBufferSize = 16384;
   char receiveMessage[bufferSize];
   char receiveBuffer[bufferSize];
@@ -55,7 +55,7 @@ void *echo(void *client) {
       else
         sprintf(sendMessage + offset, "%s", onlineClients[i]);
     }
-    myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
   } else if (strcmp(receiveMessage, "SignoutRequest") == 0) {
     // 获取客户端的 IP
     int index = numberOfOnlineClients;
@@ -67,11 +67,11 @@ void *echo(void *client) {
       }
     // 向客户端发数据
     char sendMessage[] = "Bye";
-    myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
   } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) {
     // 群聊请求
     printf("debug: before send\n");
-    myWrite(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+    myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages));
     printf("debug: after send\n");
   } else if (strcmp(strncpy(receiveBuffer, receiveMessage, 15), "PeerchatRequest") == 0) {
     int i;
@@ -92,7 +92,7 @@ void *echo(void *client) {
         strcat(sendMessage, location);
         strcat(sendMessage, "+");
       }
-    myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
   } else {
     char mode[4]; mode[3] = '\0';
     for (int i = 0; i < 3; i++)
@@ -110,7 +110,7 @@ void *echo(void *client) {
       strcat(groupchatMessages, temp);
       // 添加分割符
       strcat(groupchatMessages, "+");
-      myWrite(*clientSocket, groupchatMessages, sizeof(groupchatMessages));
+      myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages));
     } else if (strcmp(mode, "|P|") == 0) {
       char receiverIP[36];  // 收方 IP
       int i, j;
@@ -144,7 +144,7 @@ void *echo(void *client) {
           strcat(sendMessage, location);
           strcat(sendMessage, "+");
         }
-      myWrite(*clientSocket, sendMessage, sizeof(sendMessage));
+      myWrite(*clientSocket, sendMessage, strlen(sendMessage));
     }
   }
   // 关闭客户端

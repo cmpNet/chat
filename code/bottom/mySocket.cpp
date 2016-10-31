@@ -151,7 +151,7 @@ int myRead(int serverSocket, char messageBuffer[], int* bufferLen) {
 	// printf("read...\n");
 	// Todo: 使用my_recv读取数据，发送ACK
 	my_recv(tcpblock);
-	struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
+	//struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
 	struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
 	int data_count = 0;
 	char *data = (char*)(tcpblock->buffer + sizeof(struct iphdr) + sizeof(struct tcphdr));
@@ -175,9 +175,7 @@ int myWrite(int serverSocket, char message[], int len) {
 	send_data(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, message, len, tcpblock->sockfd);
 	while(1) {
 		my_recv(tcpblock);
-		struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
 		struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
-
 		if (tcp->ack == 1 && tcp->syn == 0)
 			break;
 	}

@@ -2,13 +2,14 @@
 
 char* create_packet(in_addr_t source_ip, in_addr_t dst_ip, FLAG flag, int seqnr, int srcport, int dstport, char* data, int data_len) {
 	char* packet = (char*)malloc(PACKETLEN), *packet_data;
-	memset (packet, 0, 4096);
+	memset (packet, 0, data_len + 30);
 	//struct iphdr *iph = (struct iphdr *) packet;
 	struct tcphdr *tcph = (struct tcphdr *) packet;
 	packet_data = packet + sizeof(struct tcphdr);
 
 	strcpy(packet_data, data);
-	packet_data[data_len] = '\0';
+	if (packet_data[data_len - 1] != '\0')
+		packet_data[data_len] = '\0';
 
 	/*
 	iph->ihl = 5;
@@ -48,6 +49,12 @@ int send_packet(char* packet, in_addr_t ip, int port, int sockfd) {
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(port);
 	sin.sin_addr.s_addr = ip;
+
+	// int s = socket (AF_INET, SOCK_RAW, IPPROTO_TCP);
+	// if (s == -1) {
+	// 	perror("Failed to creare sending raw socket.\n");
+	// 	return -1;
+	// }
 
 	if (sendto(sockfd, packet, PACKETLEN, 0, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
 		return -1;
