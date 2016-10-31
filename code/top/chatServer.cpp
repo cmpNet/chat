@@ -38,7 +38,7 @@ void *echo(void *client) {
   sprintf(peerIP, "%u.%u.%u.%u", p[0], p[1], p[2], p[3]);
 
   // 调试输出
-  printf("Message form client: %s\n", receiveMessage);
+  printf("Message from client: %s\n", receiveMessage);
 
   // 处理信息
   if (strcmp(receiveMessage, "SigninRequest") == 0) {  // 登录请求
@@ -148,7 +148,7 @@ void *echo(void *client) {
     }
   }
   // 关闭客户端
-  close(*clientSocket);
+  myClose(*clientSocket);
   return ((void*)0);
 }
 
@@ -171,10 +171,11 @@ int main() {
         printf("Can't create thread!\n");
         return 0;
       }
+      pthread_join(tid, NULL);
     }
   }
 
   // 关闭服务器
-  close(serverSocket);
+  myClose(serverSocket);
   return 0;
 }

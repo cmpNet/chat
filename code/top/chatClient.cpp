@@ -57,12 +57,15 @@ void post(char *sendMessage, char *receiveMessage) {
   connect(clientSocket, "127.0.0.1", port);
   // 向服务器发送数据
   // printf("debug: %s\n", sendMessage);
+  printf("1: %d\n", clientSocket);
   myWrite(clientSocket, sendMessage, bufferSize);
+  printf("2: %d\n", clientSocket);
   // 读回服务器的数据
   int len = 0;
   myRead(clientSocket, receiveMessage, &len);
+  printf("3: %d\n", clientSocket);
   // 关闭客户端
-  close(clientSocket);
+  myClose(clientSocket);
 }
 
 void signout() {

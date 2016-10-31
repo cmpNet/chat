@@ -49,8 +49,6 @@ typedef struct tcb {
 	int  our_seqnr;
 	int their_seqnr;
 	int acknr;
-	int sockfd;
-	int revfd;
 	char buffer[PACKETLEN];
 	state_t state;
 } tcb_t;
@@ -79,7 +77,7 @@ int myRead(int socket, char messageBuffer[], int* bufferLen);
 int myWrite(int socket, char message[], int len);
 
 // 成功的话返回1，失败的话返回-1
-int close(int socket);
+int myClose(int socket);
 
 in_addr_t getPeerIp(int socket);
 

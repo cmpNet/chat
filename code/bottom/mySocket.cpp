@@ -15,6 +15,7 @@ int getSocket() {
 		tcb_t* tcpblock = (*monitor)[i];
 		if (tcpblock->state == S_CLOSED) {
 			init(tcpblock);
+			printf("You uses %d\n", i);
 			return i;
 		}
 	}
@@ -22,25 +23,15 @@ int getSocket() {
 	tcb_t* tcpblock = (tcb_t*)malloc(sizeof(tcb_t));
 	init(tcpblock);
 
-	tcpblock->sockfd = socket (AF_INET, SOCK_RAW, IPPROTO_TCP);
-	if (tcpblock->sockfd == -1) {
-		perror("Failed to creare sending raw socket.\n");
-		return -1;
-	}
-
-	tcpblock->revfd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
-	if (tcpblock->revfd == -1) {
-		perror("Failed to create receiving raw socket.\n");
-		return -1;
-	}
 	monitor->push_back(tcpblock);
+	printf("You uses %d\n", monitor->size() - 1);
 	return monitor->size() - 1;
 }
 
 tcb_t *getTcpBlock(int serverSocket) {
 	vector<tcb_t* > *monitor = getMonitor();
 	if ((*monitor).size() <= serverSocket) {
-		perror("Server socket id is wrong\n");
+		printf("Socket %d is wrong, size: %d\n", serverSocket, (*monitor).size());
 		return NULL;
 	}
 	return (*monitor)[serverSocket];
@@ -84,7 +75,7 @@ int serverConnection(in_addr_t srcIp, in_addr_t dstIp, int dstPort) {
 	conTcb -> our_port = port_number;
 	port_number++;
 	//Todo: 发送SYN_ACK, 使用my_recv获取ACK包，得到ACK后设置状态为S_ESTABLISHED
-	send_syn_ack(srcIp, dstIp, conTcb -> our_port , dstPort, 0, conTcb->sockfd);
+	send_syn_ack(srcIp, dstIp, conTcb -> our_port , dstPort, 0);
 	my_recv(conTcb);
 	struct iphdr* ip = (struct iphdr*)(conTcb->buffer);
 	struct tcphdr *tcp = (struct tcphdr *)(conTcb->buffer + sizeof(struct iphdr));
@@ -113,7 +104,6 @@ int accept(int serverSocket) {
 // 成功的话返回1，失败的话返回-1
 int connect(int ClientSocket, const char ip_s[], int port) {
 	static int port_number = 1000;
-
 	tcb_t* tcpblock = getTcpBlock(ClientSocket);
 	if (tcpblock == NULL || tcpblock->state != S_CONFIG)
 		return -1;
@@ -125,7 +115,7 @@ int connect(int ClientSocket, const char ip_s[], int port) {
 	tcpblock -> their_ipaddr = inet_addr(ip_s);
 	tcpblock -> their_port = port;
 	// Todo: 发送SYN包，等待SYN_ACK, 然后发送ACK包，设置状态为S_ESTABLISHED
-	send_syn(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
+	send_syn(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0);
 	int newPort = tcpblock -> their_port;
 	while(1) {
 		my_recv(tcpblock);
@@ -139,7 +129,7 @@ int connect(int ClientSocket, const char ip_s[], int port) {
 	}
 	tcpblock -> state = S_ESTABLISHED;
 	tcpblock->their_port = newPort;
-	int isSuccess = send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
+	int isSuccess = send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0);
 	return isSuccess;
 }
 
@@ -148,9 +138,13 @@ int myRead(int serverSocket, char messageBuffer[], int* bufferLen) {
 	tcb_t* tcpblock = getTcpBlock(serverSocket);
 	if (tcpblock == NULL || tcpblock->state != S_ESTABLISHED)
 		return -1;
-	// printf("read...\n");
+	printf("read...\n");
 	// Todo: 使用my_recv读取数据，发送ACK
+	unsigned char* p = (unsigned char*)&(tcpblock -> their_ipaddr);
+	//printf("Source IP: %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+	//printf("Read Port: %d\n", tcpblock->our_port);
 	my_recv(tcpblock);
+	printf("received\n");
 	//struct iphdr* ip = (struct iphdr*)(tcpblock->buffer);
 	struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
 	int data_count = 0;
@@ -164,7 +158,8 @@ int myRead(int serverSocket, char messageBuffer[], int* bufferLen) {
 	// for (int i = 0; i < data_count; i++)
 	// 	 printf("%c", data[i]);
 	// printf("\n");
-	return send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, tcpblock->sockfd);
+	printf("Send ACK\n");
+	return send_ack(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0);
 }
 
 int myWrite(int serverSocket, char message[], int len) {
@@ -172,9 +167,14 @@ int myWrite(int serverSocket, char message[], int len) {
 	if (tcpblock == NULL || tcpblock->state != S_ESTABLISHED)
 		return -1;
 	// Todo: 使用send_data发送包, 使用my_recv获取ACK包
-	send_data(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, message, len, tcpblock->sockfd);
+	send_data(tcpblock -> our_ipaddr, tcpblock -> their_ipaddr, tcpblock -> our_port, tcpblock -> their_port, 0, message, len);
+	unsigned char* p = (unsigned char*)&(tcpblock -> their_ipaddr);
+	printf("Source IP: %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+	printf("Port: %d\n", tcpblock -> their_port);
+	// printf("Data sent\n");
 	while(1) {
 		my_recv(tcpblock);
+		// printf("ACK Received\n");
 		struct tcphdr *tcp = (struct tcphdr *)(tcpblock->buffer + sizeof(struct iphdr));
 		if (tcp->ack == 1 && tcp->syn == 0)
 			break;
@@ -182,11 +182,11 @@ int myWrite(int serverSocket, char message[], int len) {
 	return -1;
 }
 
-int close(int serverSocket) {
+int myClose(int serverSocket) {
 	tcb_t* tcpblock = getTcpBlock(serverSocket);
 	if (tcpblock == NULL || tcpblock->state != S_ESTABLISHED)
 		return -1;
-	tcpblock->state = S_CLOSING;
+	tcpblock->state = S_CLOSED;
 	//Todo: 四次挥手，之后设置状态为S_CLOSED
 	return -1;
 }
