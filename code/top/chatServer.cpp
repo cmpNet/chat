@@ -31,6 +31,7 @@ void *echo(void *client) {
   char receiveBuffer[bufferSize];
   int len = 0;
   myRead(*clientSocket, receiveMessage, &len);
+  receiveMessage[len] = '\0';
   // printf("debug: %s\n", receiveMessage);
   char peerIP[bufferSize];
   in_addr_t temp = getPeerIp(*clientSocket);
@@ -55,7 +56,7 @@ void *echo(void *client) {
       else
         sprintf(sendMessage + offset, "%s", onlineClients[i]);
     }
-    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage) + 1);
   } else if (strcmp(receiveMessage, "SignoutRequest") == 0) {
     // 获取客户端的 IP
     int index = numberOfOnlineClients;
@@ -67,11 +68,11 @@ void *echo(void *client) {
       }
     // 向客户端发数据
     char sendMessage[] = "Bye";
-    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage) + 1);
   } else if (strcmp(receiveMessage, "GroupchatRequest") == 0) {
     // 群聊请求
     printf("debug: before send\n");
-    myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages));
+    myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages) + 1);
     printf("debug: after send\n");
   } else if (strcmp(strncpy(receiveBuffer, receiveMessage, 15), "PeerchatRequest") == 0) {
     int i;
@@ -92,7 +93,7 @@ void *echo(void *client) {
         strcat(sendMessage, location);
         strcat(sendMessage, "+");
       }
-    myWrite(*clientSocket, sendMessage, strlen(sendMessage));
+    myWrite(*clientSocket, sendMessage, strlen(sendMessage) + 1);
   } else {
     char mode[4]; mode[3] = '\0';
     for (int i = 0; i < 3; i++)
@@ -110,7 +111,7 @@ void *echo(void *client) {
       strcat(groupchatMessages, temp);
       // 添加分割符
       strcat(groupchatMessages, "+");
-      myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages));
+      myWrite(*clientSocket, groupchatMessages, strlen(groupchatMessages) + 1);
     } else if (strcmp(mode, "|P|") == 0) {
       char receiverIP[36];  // 收方 IP
       int i, j;
@@ -144,12 +145,12 @@ void *echo(void *client) {
           strcat(sendMessage, location);
           strcat(sendMessage, "+");
         }
-      myWrite(*clientSocket, sendMessage, strlen(sendMessage));
+      myWrite(*clientSocket, sendMessage, strlen(sendMessage) + 1);
     }
   }
   // 关闭客户端
   close(*clientSocket);
-  return ((void*)0);
+  printf("Socket closed.\n");
 }
 
 int main() {
@@ -157,20 +158,23 @@ int main() {
   int port = 2014;
   groupchatMessages[0] = '\0';
   int serverSocket = getSocket();
-  bind(serverSocket, "127.0.0.1");  // 设置服务器 IP
+  bind(serverSocket, "172.19.111.100");  // 设置服务器 IP
   printf("Server is running on port %d.\n", port);
   listen(serverSocket, port);
   // 监听
   while (1) {
     // 接收客户端请求
+    printf("Waiting for connection...\n");
     int clientSocket = accept(serverSocket);
     if (clientSocket) {
-      pthread_t tid;
       void *client = &clientSocket;
+      pthread_t tid;
       if ((pthread_create(&tid, NULL, echo, client))!= 0) {
         printf("Can't create thread!\n");
         return 0;
       }
+      pthread_join(tid, NULL);
+      printf("Connection closed.\n");
     }
   }
 

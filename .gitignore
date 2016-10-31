@@ -8,3 +8,4 @@ code/server
 
 # 忽略 Linux 下的编译文件
 *.h.gch
+*.h~
